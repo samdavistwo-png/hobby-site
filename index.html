@@ -1,0 +1,198 @@
+< re!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="0; url=utility_dashboard.html">
+
+    <title>Opening Utility Dashboard...</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #db641a;
+            text-align: center;
+            padding-top: 50px;
+        }
+
+        .container {
+            width: 400px;
+            margin: auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+
+        h1 {
+            color: #2563eb;
+        }
+
+        input {
+            width: 70%;
+            padding: 10px;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 10px 15px;
+            font-size: 16px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        #weather {
+            margin-top: 25px;
+            text-align: left;
+        }
+
+        .weather-item {
+            padding: 8px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        #error {
+            color: red;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Weather Report</h1>
+
+    <input
+        type="text"
+        id="location"
+        placeholder="Enter city name"
+    >
+
+    <button onclick="getWeather()">
+        Search
+    </button>
+
+    <div id="weather"></div>
+
+    <div id="error"></div>
+
+</div>
+
+
+<script>
+
+async function getWeather() {
+
+    const location =
+        document.getElementById("location").value.trim();
+
+    const weatherDiv =
+        document.getElementById("weather");
+
+    const errorDiv =
+        document.getElementById("error");
+
+    weatherDiv.innerHTML = "";
+    errorDiv.innerHTML = "";
+
+    if (location === "") {
+        errorDiv.innerHTML = "Please enter a location.";
+        return;
+    }
+
+    try {
+
+        // Step 1: Find latitude and longitude
+        const geoURL =
+            `https://simple-books-api.glitch.me
+/v1/search?name=${encodeURIComponent(location)}&count=1&language=en&format=json`;
+
+        const geoResponse = await fetch(geoURL);
+
+        const geoData = await geoResponse.json();
+
+        if (!geoData.results || geoData.results.length === 0) {
+            errorDiv.innerHTML =
+                "Location not found.";
+            return;
+        }
+
+        const place = geoData.results[0];
+
+        const latitude = place.latitude;
+        const longitude = place.longitude;
+
+        // Step 2: Get weather
+        const weatherURL =
+            `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,wind_speed_10m`;
+
+        const weatherResponse =
+            await fetch(weatherURL);
+
+        const weatherData =
+            await weatherResponse.json();
+
+        const current =
+            weatherData.current;
+
+        // Step 3: Display result
+        weatherDiv.innerHTML = `
+
+            <h2>
+                ${place.name}, ${place.country}
+            </h2>
+
+            <div class="weather-item">
+                🌡 Temperature:
+                <b>${current.temperature_2m} °C</b>
+            </div>
+
+            <div class="weather-item">
+                🌡 Feels Like:
+                <b>${current.apparent_temperature} °C</b>
+            </div>
+
+            <div class="weather-item">
+                💧 Humidity:
+                <b>${current.relative_humidity_2m} %</b>
+            </div>
+
+            <div class="weather-item">
+                🌧 Precipitation:
+                <b>${current.precipitation} mm</b>
+            </div>
+
+            <div class="weather-item">
+                💨 Wind Speed:
+                <b>${current.wind_speed_10m} km/h</b>
+            </div>
+
+            <div class="weather-item">
+                🕒 Time:
+                <b>${current.time}</b>
+            </div>
+        `;
+
+    }
+    catch (error) {
+
+        console.error(error);
+
+        errorDiv.innerHTML =
+            "Unable to retrieve weather data.";
+    }
+}
+
+</script>
+
+</body>
+</html>
